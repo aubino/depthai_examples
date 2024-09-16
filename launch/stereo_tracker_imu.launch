@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- <args for urdf/> -->
+    <arg name="camera_model"        default="OAK-D"   /> <!-- 'zed' or 'zedm' -->
+    <arg name="tf_prefix"           default="oak"         />
+    <arg name="base_frame"          default="oak-d_frame" />
+    <arg name="parent_frame"        default="oak-d-base-frame" />
+
+    <node name="feature_tracker_imu" pkg="depthai_examples" type="feature_tracker_imu" output="screen" required="true">
+    </node>            
+
+</launch>

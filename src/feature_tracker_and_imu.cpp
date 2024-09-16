@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
     xoutTrackedFeaturesCamB->setStreamName("trackedFeaturesLeft");
     xoutTrackedFeaturesCamD->setStreamName("trackedFeaturesRight");
-    xoutImageCamB->setStreamName("camB") ; 
+    cc->setStreamName("camB") ; 
     xoutImageCamD->setStreamName("camD") ; 
     xoutImu->setStreamName("imu") ; 
 
@@ -61,9 +61,11 @@ int main(int argc, char** argv) {
     // Linking
     monoCamB->out.link(featureTrackerCamB->inputImage);
     featureTrackerCamB->outputFeatures.link(xoutTrackedFeaturesCamB->input);
+    featureTrackerCamB->passthroughInputImage.link(xoutImageCamB) ; 
 
     monoCamD->out.link(featureTrackerCamD->inputImage);
     featureTrackerCamD->outputFeatures.link(xoutTrackedFeaturesCamD->input);
+    featureTrackerCamD->passthroughInputImage.link(xoutImageCamD) ; 
 
     // By default the least mount of resources are allocated
     // increasing it improves performance when optical flow is enabled
@@ -90,6 +92,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Listing available devices..." << std::endl;
     device = std::make_shared<dai::Device>(pipeline);
+    device->setTimesync(true) ; 
     auto outputFeaturesLeftQueue = device->getOutputQueue("trackedFeaturesLeft", 2, false);
     auto outputFeaturesRightQueue = device->getOutputQueue("trackedFeaturesRight", 2, false);
     auto camBQueue = device->getOutputQueue("camB", 2, false);
