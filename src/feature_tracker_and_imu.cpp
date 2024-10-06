@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     ros::NodeHandle pnh("~");
 
     dai::Pipeline pipeline;
-
+    pipeline.setXLinkChunkSize(0);
     // Define sources and outputs
     auto monoCamB = pipeline.create<dai::node::MonoCamera>();
     auto monoCamD = pipeline.create<dai::node::MonoCamera>();
@@ -42,16 +42,17 @@ int main(int argc, char** argv) {
 
     xoutTrackedFeaturesCamB->setStreamName("trackedFeaturesLeft");
     xoutTrackedFeaturesCamD->setStreamName("trackedFeaturesRight");
-    cc->setStreamName("camB") ; 
+    xoutImageCamB->setStreamName("camB") ; 
     xoutImageCamD->setStreamName("camD") ; 
     xoutImu->setStreamName("imu") ; 
 
     // Properties
     monoCamB->setResolution(dai::MonoCameraProperties::SensorResolution::THE_800_P);
     monoCamB->setBoardSocket(dai::CameraBoardSocket::CAM_B);
+    monoCamB->setFps(20) ; 
     monoCamD->setResolution(dai::MonoCameraProperties::SensorResolution::THE_800_P);
     monoCamD->setBoardSocket(dai::CameraBoardSocket::CAM_D);
-    
+    monoCamD->setFps(20) ; 
     // Imu
     imu->enableIMUSensor(dai::IMUSensor::ACCELEROMETER_RAW, 500);
     imu->enableIMUSensor(dai::IMUSensor::GYROSCOPE_RAW, 400);
@@ -61,11 +62,12 @@ int main(int argc, char** argv) {
     // Linking
     monoCamB->out.link(featureTrackerCamB->inputImage);
     featureTrackerCamB->outputFeatures.link(xoutTrackedFeaturesCamB->input);
-    featureTrackerCamB->passthroughInputImage.link(xoutImageCamB) ; 
+    featureTrackerCamB->passthroughInputImage.link(xoutImageCamB->input) ; 
 
     monoCamD->out.link(featureTrackerCamD->inputImage);
     featureTrackerCamD->outputFeatures.link(xoutTrackedFeaturesCamD->input);
-    featureTrackerCamD->passthroughInputImage.link(xoutImageCamD) ; 
+    featureTrackerCamD->passthroughInputImage.link(xoutImageCamD->input) ; 
+    imu->out.link(xoutImu->input) ;
 
     // By default the least mount of resources are allocated
     // increasing it improves performance when optical flow is enabled
@@ -75,13 +77,13 @@ int main(int argc, char** argv) {
     featureTrackerCamD->setHardwareResources(numShaves, numMemorySlices);
 
     auto featureTrackerConfig = featureTrackerCamD->initialConfig.get();
-    featureTrackerConfig.cornerDetector.type = dai::RawFeatureTrackerConfig::CornerDetector::Type::HARRIS ; 
+    featureTrackerConfig.cornerDetector.type = dai::RawFeatureTrackerConfig::CornerDetector::Type::SHI_THOMASI ; 
     featureTrackerConfig.featureMaintainer.enable = true ; 
     featureTrackerConfig.featureMaintainer.minimumDistanceBetweenFeatures = 15 ; 
-    featureTrackerConfig.featureMaintainer.trackedFeatureThreshold = 15 ; 
+    // featureTrackerConfig.featureMaintainer.trackedFeatureThreshold = 15 ; 
     featureTrackerConfig.cornerDetector.numTargetFeatures = 300 ; 
     featureTrackerConfig.cornerDetector.cellGridDimension = 4 ; 
-    featureTrackerConfig.cornerDetector.thresholds.min = 20 ; 
+    // featureTrackerConfig.cornerDetector.thresholds.min = 20 ; 
     featureTrackerConfig.motionEstimator.enable = true ; 
     featureTrackerConfig.motionEstimator.type = dai::RawFeatureTrackerConfig::MotionEstimator::Type::LUCAS_KANADE_OPTICAL_FLOW ; 
     featureTrackerCamB->initialConfig.set(featureTrackerConfig) ; 
